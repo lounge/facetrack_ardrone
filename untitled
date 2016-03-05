@@ -1,0 +1,35 @@
+var cv = require('opencv')
+  , assert = require('assert')
+  , fs = require('fs')
+  , http = require('http')
+  , arDrone = require('ar-drone')
+  , client  = arDrone.createClient();
+
+var lastPng
+  , flying
+
+var pngStream = client.createPngStream();
+
+
+pngStream
+		.on('error', function (error) {
+			//console.log(error);
+		})
+		.on('data', function (buffer) {
+			lastPng = buffer;
+		});
+
+ var server = http.createServer(function(req, res) {
+  if (!lastPng) {
+    res.writeHead(503);
+    res.end('Did not receive any png data yet.');
+    return;
+  }
+
+  res.writeHead(200, {'Content-Type': 'image/png'});
+  res.end(lastPng);
+});
+
+server.listen(8080, function() {
+  console.log('started on 8080');
+});

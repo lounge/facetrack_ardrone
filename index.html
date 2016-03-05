@@ -1,0 +1,270 @@
+<html>
+<head> 
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <script src="/dronestream/nodecopter-client.js" type="text/javascript" charset="utf-8"></script>
+    <script src="http://127.0.0.1:8081/socket.io/socket.io.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<body>
+	
+	
+	<h1 id="status">offline</h1>
+	<h3 id="camera"></h3>
+
+	<div id="droneStream"></div>
+
+	<table>
+		<thead>
+			<th>Key</th>
+			<th>Action</th>
+		</thead>
+		<tbody>
+			<tr id="13">
+				<td>Enter</td>
+				<td>Take off</td>
+			</tr>
+			<tr id="27">
+				<td>Esc</td>
+				<td>Land</td>
+			</tr>
+			<tr id="32">
+				<td>Space</td>
+				<td>Stop / Hover</td>
+			</tr>
+
+			<tr id="38">
+				<td>&uarr;</td>
+				<td>Up</td>
+			</tr>
+			<tr id="40">
+				<td>&darr;</td>
+				<td>Down</td>
+			</tr>
+			<tr id="37">
+				<td>&larr;</td>
+				<td>Left</td>
+			</tr>
+			<tr id="39">
+				<td>&rarr;</td>
+				<td>Right</td>
+			</tr>
+
+			<tr id="87">
+				<td>W</td>
+				<td>Forward</td>
+			</tr>
+			<tr id="83">
+				<td>S</td>
+				<td>Backward</td>
+			</tr>
+			<tr id="65">
+				<td>A</td>
+				<td>Rotate left</td>
+			</tr>
+			<tr id="68">
+				<td>D</td>
+				<td>Rotate right</td>
+			</tr>
+
+			<tr id="49">
+				<td>1</td>
+				<td>Camera 1</td>
+			</tr>
+			<tr id="50">
+				<td>2</td>
+				<td>Camera 2</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h3 id="altitude"></h3>
+	<h3 id="flyStatus"></h3>
+
+	<style>
+		#droneStream {
+			float: left;
+		}
+
+		table {
+			float: left;
+			margin-left: 50px;
+		}
+		table, th, td {
+			border: 1px solid black;
+		}
+
+		#altitude {
+			margin-top: 20px;
+			clear: both;
+		}
+	</style>
+
+	<script>
+	new NodecopterStream(document.getElementById("droneStream"));
+
+	  
+    var isMovementCommand = false
+      , keyDown = false
+      , flying = false
+	  , movementSpeed = 0.3;
+
+  	var keys = { 
+  		camera1: 29,
+  		camera2: 30,
+		takeoff: 13,
+	  	land: 27,
+	  	hover: 32,
+	  	up: 38,
+	  	down: 40,
+	  	left: 37,
+	  	right: 39,
+	  	rotateLeft: 65,
+	  	rotateRight: 68, 
+	  	backward: 83,
+	  	forward: 87,
+	}
+
+
+
+	var movementKeys = [37, 38, 39, 40, 65, 68, 83, 87];
+	var actionKeys = [13, 27, 32];
+	var cameraKeys = [29, 30];
+
+	document.addEventListener('keydown', runCommand);
+	document.addEventListener('keyup', stopCommand);
+
+	
+
+
+	var socket = io.connect('http://127.0.0.1:8081');
+
+	socket.on('connection', function (data) {
+		console.log(data.status);
+		document.getElementById('status').innerHTML = data.status;
+	});
+
+	socket.on('flying', function (data) {
+		console.log('flying: ' +  data.status);
+		flying = data.status;
+		document.getElementById('flyStatus').innerHTML = flying ? "status: flying" : "status: landed";
+	});
+
+	socket.on('navdata', function (data) {
+		console.log('flying: ' +  data.navdata.demo.altitudeMeters);
+		document.getElementById('altitude').innerHTML = "altitude: " +  data.navdata.demo.altitudeMeters;
+	});
+
+	function runCommand (e) {
+
+		if (movementKeys.indexOf(e.keyCode) > -1) {
+			isMovementCommand = true;
+			if (keyDown) {
+				return false;
+			}
+		}
+
+		console.log(e.keyCode)
+		switch (e.keyCode) {
+			case 13:
+				takeOff(e.keyCode);
+				break;
+			case 27:
+				land(e.keyCode);
+				break;
+			case 32:
+				//client.stop();
+				if (flying) { console.log('stop / hover'); sendCommand(e.keyCode) };
+				break;
+			case 38:
+				//client.up(movementSpeed);
+				if (flying) { console.log('up'); sendCommand(e.keyCode) };
+				break;
+			case 40: 
+				//client.down(movementSpeed);
+				if (flying) { console.log('down'); sendCommand(e.keyCode) };
+				break;
+			case 37:
+				//client.left(movementSpeed);
+				if (flying) { console.log('left'); sendCommand(e.keyCode) };
+				break;
+			case 39:
+				//client.right(movementSpeed);
+				if (flying) { console.log('right'); sendCommand(e.keyCode) };
+				break;
+			case 65:
+				//client.counterClockwise(movementSpeed);
+				if (flying) { console.log('rotate left'); sendCommand(e.keyCode) };
+				break;
+			case 68:
+				//client.clockwise(movementSpeed);
+				if (flying) { console.log('rotate right'); sendCommand(e.keyCode) };
+				break;
+			case 83:
+				//client.counterClockwise(movementSpeed);
+				if (flying) { console.log('backward'); sendCommand(e.keyCode) };
+				break;
+			case 87:
+				//client.clockwise(movementSpeed);
+				if (flying) { console.log('forward'); sendCommand(e.keyCode) };
+				break;
+
+			case 49:
+				//client.counterClockwise(movementSpeed);
+				console.log('camera 1'); sendCommand(e.keyCode);
+				//document.getElementById('camera').innerHTML = "camera 1";
+				break;
+			case 50:
+				//client.clockwise(movementSpeed);
+				console.log('camera 2'); sendCommand(e.keyCode);
+				//document.getElementById('camera').innerHTML = "camera 2";
+				break;
+		}
+
+		setCommandColor(e.keyCode);
+		keyDown = true;
+	}
+
+	
+	function sendCommand (command) {
+		socket.emit('command', { command: command });
+	}
+
+	function stopCommand (e) {
+		if (isMovementCommand && flying) {
+			console.log('stopCommand()');
+			isMovementCommand = false;
+			keyDown = false;
+			sendCommand(32);
+			setCommandColor();
+		}
+	}
+
+	function takeOff (command) {
+		if (!flying) {
+			console.log('takeoff');
+			sendCommand(command);
+			setCommandColor(command);
+		}
+	}
+
+	function land (command) {
+		if (flying) {
+			console.log('land');
+			sendCommand(command);
+			setCommandColor(command);
+		}
+	}
+
+	function setCommandColor (command) {
+		var trs = document.getElementsByTagName("tr");
+
+		for (var i = 0; i < trs.length; i++) {
+			trs[i].style.background = "white";
+		}
+
+		if (command)
+			document.getElementById(command).style.background = "#70B8FF";
+	}
+
+	</script>
+</body>
+</html>
